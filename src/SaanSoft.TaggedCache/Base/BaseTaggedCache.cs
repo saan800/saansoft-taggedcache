@@ -54,7 +54,10 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
             }
 
             await TryRefreshSlidingAsync(kvp.Value, nowUtc, ct);
-            results[kvp.Key] = JsonSerializer.Deserialize<T>(kvp.Value.PayloadAsString(), cacheOptions.JsonSerializerOptions);
+            var payload = kvp.Value.PayloadAsString();
+            results[kvp.Key] = payload == null
+                ? default
+                : JsonSerializer.Deserialize<T>(payload, cacheOptions.JsonSerializerOptions);
         }
 
         if (expiredKeys.Count > 0)

@@ -232,7 +232,9 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
     protected override async Task UpdateExpiryInternalAsync(string normalizedCacheKey, DateTimeOffset expiresAtUtc, DateTimeOffset? absoluteExpiresAtUtc, TimeSpan? slidingExpiration, CancellationToken ct)
     {
         var record = await GetRecordInternalAsync(normalizedCacheKey, ct);
-        if (record == null || expiresAtUtc <= DateTimeOffset.UtcNow)
+        if (record == null) return;
+
+        if (expiresAtUtc <= DateTimeOffset.UtcNow)
         {
             await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return;
@@ -258,10 +260,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         if (absoluteExpiresAtUnix.HasValue)
         {
             setParts.Add("AbsoluteExpiresAtUnix = :absExp");
-            attributeValues[":absExp"] = new AttributeValue
-            {
-                N = absoluteExpiresAtUnix.Value.ToString()
-            };
+            attributeValues[":absExp"] = new AttributeValue { N = absoluteExpiresAtUnix.Value.ToString() };
         }
         else
         {
@@ -271,10 +270,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         if (slidingSeconds.HasValue)
         {
             setParts.Add("SlidingExpirationSeconds = :sliding");
-            attributeValues[":sliding"] = new AttributeValue
-            {
-                N = slidingSeconds.Value.ToString()
-            };
+            attributeValues[":sliding"] = new AttributeValue { N = slidingSeconds.Value.ToString() };
         }
         else
         {
@@ -301,7 +297,9 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         new DynamoDbCacheRecord
         {
             CacheKey = item["CacheKey"].S,
-            Payload = item["Payload"].S,
+            Payload = item.TryGetValue("Payload", out var pay)
+                ? pay.S
+                : null,
             ExpiresAtUtc = DateTimeOffset.FromUnixTimeSeconds(long.Parse(item["ExpiresAtUnix"].N)),
             AbsoluteExpiresAtUtc = item.TryGetValue("AbsoluteExpiresAtUnix", out var abs)
                 ? DateTimeOffset.FromUnixTimeSeconds(long.Parse(abs.N))
@@ -316,7 +314,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
     private List<TransactWriteItem> BuildSetTransaction(
         string cacheKey,
-        string payload,
+        string? payload,
         ResolvedExpiry resolved,
         IReadOnlyCollection<string> newTags,
         IReadOnlyCollection<string> oldTags)
@@ -326,9 +324,11 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         var cacheItem = new Dictionary<string, AttributeValue>
         {
             ["CacheKey"] = new() { S = cacheKey },
-            ["Payload"] = new() { S = payload },
             ["ExpiresAtUnix"] = new() { N = expiresAtUnix.ToString() }
         };
+
+        if (!string.IsNullOrWhiteSpace(payload))
+            cacheItem["Payload"] = new() { S = payload };
 
         if (newTags.Count > 0)
             cacheItem["Tags"] = new() { SS = newTags.ToList() };

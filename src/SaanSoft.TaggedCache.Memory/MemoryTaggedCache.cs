@@ -57,19 +57,12 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
         if (!memoryCache.TryGetValue<MemoryCacheRecord>(normalizedCacheKey, out var record) || record is null)
             return null;
 
-        if (record.Payload.Length == 0)
-        {
-            await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
-            return null;
-        }
-
         var nowUtc = DateTimeOffset.UtcNow;
         if (record.ExpiresAtUtc <= nowUtc || (record.AbsoluteExpiresAtUtc.HasValue && record.AbsoluteExpiresAtUtc.Value <= nowUtc))
         {
             await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return null;
         }
-
 
         if (await TryRefreshSlidingAsync(record, nowUtc, ct))
         {
@@ -110,7 +103,9 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
     protected override async Task UpdateExpiryInternalAsync(string normalizedCacheKey, DateTimeOffset expiresAtUtc, DateTimeOffset? absoluteExpiresAtUtc, TimeSpan? slidingExpiration, CancellationToken ct)
     {
         var record = await GetRecordInternalAsync(normalizedCacheKey, ct);
-        if (record == null || expiresAtUtc <= DateTimeOffset.UtcNow)
+        if (record == null) return;
+
+        if (expiresAtUtc <= DateTimeOffset.UtcNow)
         {
             await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return;
