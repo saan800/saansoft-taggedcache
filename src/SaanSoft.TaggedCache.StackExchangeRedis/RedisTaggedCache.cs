@@ -54,8 +54,23 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
 
     protected override async Task<RedisCacheRecord?> GetRecordInternalAsync(string normalizedCacheKey, CancellationToken ct)
     {
-        var value = await _db.StringGetAsync(normalizedCacheKey);
-        return RedisValueToCacheRecord(value);
+        var record = RedisValueToCacheRecord(await _db.StringGetAsync(normalizedCacheKey));
+        if (record is null) return null;
+
+        var nowUtc = DateTimeOffset.UtcNow;
+        if (record.ExpiresAtUtc <= nowUtc)
+        {
+            await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
+            return null;
+        }
+
+        if (await TryRefreshSlidingAsync(record, nowUtc, ct))
+        {
+            var refreshed = RedisValueToCacheRecord(await _db.StringGetAsync(normalizedCacheKey));
+            if (refreshed is not null) return refreshed;
+        }
+
+        return record;
     }
 
     protected override async Task<Dictionary<string, RedisCacheRecord?>> GetManyRecordsInternalAsync(IReadOnlyCollection<string> normalizedCacheKeys, CancellationToken ct)
@@ -138,15 +153,18 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
 
     protected override async Task UpdateExpiryInternalAsync(string normalizedCacheKey, DateTimeOffset expiresAtUtc, DateTimeOffset? absoluteExpiresAtUtc, TimeSpan? slidingExpiration, CancellationToken ct)
     {
-        var record = await GetRecordInternalAsync(normalizedCacheKey, ct);
+        var record = RedisValueToCacheRecord(await _db.StringGetAsync(normalizedCacheKey));
+        if (record == null) return;
+
         var ttl = expiresAtUtc - DateTimeOffset.UtcNow;
-        if (record == null || ttl <= TimeSpan.Zero)
+        if (ttl <= TimeSpan.Zero)
         {
             await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return;
         }
 
-        var refreshedRecord = new RedisCacheRecord{
+        var refreshedRecord = new RedisCacheRecord
+        {
             CacheKey = record.CacheKey,
             Payload = record.Payload,
             ExpiresAtUtc = expiresAtUtc,
@@ -155,14 +173,10 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
             Tags = record.Tags
         };
 
-
         var recordJson = JsonSerializer.Serialize(refreshedRecord, cacheOptions.JsonSerializerOptions);
 
         var batch = _db.CreateBatch();
-        var tasks = new List<Task>
-        {
-            batch.StringSetAsync(normalizedCacheKey, recordJson, ttl)
-        };
+        var tasks = new List<Task> { batch.StringSetAsync(normalizedCacheKey, recordJson, ttl) };
 
         batch.Execute();
         await Task.WhenAll(tasks);

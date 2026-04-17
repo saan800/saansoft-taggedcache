@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SaanSoft.TaggedCache\SaanSoft.TaggedCache.csproj" />
+  </ItemGroup>
+
+
+</Project>

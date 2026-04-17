@@ -75,19 +75,23 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
     protected override async Task<DynamoDbCacheRecord?> GetRecordInternalAsync(string normalizedCacheKey, CancellationToken ct)
     {
-        var response = await dynamoDb.GetItemAsync(new GetItemRequest
+        var record = await GetDynamoDbCacheRecordAsync(normalizedCacheKey, ct);
+        if (record == null) return null;
+
+        var nowUtc = DateTimeOffset.UtcNow;
+        if (record.ExpiresAtUtc <= nowUtc)
         {
-            TableName = cacheOptions.CacheTableName,
-            Key = new Dictionary<string, AttributeValue>
-            {
-                ["CacheKey"] = new() { S = normalizedCacheKey }
-            }
-        }, ct);
-
-        if (response.Item is null || response.Item.Count == 0)
+            await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return null;
+        }
 
-        return MapItemToRecord(response.Item);
+        if (await TryRefreshSlidingAsync(record, nowUtc, ct))
+        {
+            var refreshed = await GetDynamoDbCacheRecordAsync(normalizedCacheKey, ct);
+            if (refreshed is not null) return refreshed;
+        }
+
+        return record;
     }
 
     protected override async Task<Dictionary<string, DynamoDbCacheRecord?>> GetManyRecordsInternalAsync(
@@ -231,8 +235,10 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
     protected override async Task UpdateExpiryInternalAsync(string normalizedCacheKey, DateTimeOffset expiresAtUtc, DateTimeOffset? absoluteExpiresAtUtc, TimeSpan? slidingExpiration, CancellationToken ct)
     {
-        var record = await GetRecordInternalAsync(normalizedCacheKey, ct);
-        if (record == null || expiresAtUtc <= DateTimeOffset.UtcNow)
+        var record = await GetDynamoDbCacheRecordAsync(normalizedCacheKey, ct);
+        if (record is null) return;
+
+        if (expiresAtUtc <= DateTimeOffset.UtcNow)
         {
             await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return;
@@ -258,10 +264,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         if (absoluteExpiresAtUnix.HasValue)
         {
             setParts.Add("AbsoluteExpiresAtUnix = :absExp");
-            attributeValues[":absExp"] = new AttributeValue
-            {
-                N = absoluteExpiresAtUnix.Value.ToString()
-            };
+            attributeValues[":absExp"] = new AttributeValue { N = absoluteExpiresAtUnix.Value.ToString() };
         }
         else
         {
@@ -271,10 +274,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         if (slidingSeconds.HasValue)
         {
             setParts.Add("SlidingExpirationSeconds = :sliding");
-            attributeValues[":sliding"] = new AttributeValue
-            {
-                N = slidingSeconds.Value.ToString()
-            };
+            attributeValues[":sliding"] = new AttributeValue { N = slidingSeconds.Value.ToString() };
         }
         else
         {
@@ -297,11 +297,30 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         }, ct);
     }
 
+    private async Task<DynamoDbCacheRecord?> GetDynamoDbCacheRecordAsync(string normalizedCacheKey, CancellationToken ct)
+    {
+        var response = await dynamoDb.GetItemAsync(new GetItemRequest
+        {
+            TableName = cacheOptions.CacheTableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                ["CacheKey"] = new() { S = normalizedCacheKey }
+            }
+        }, ct);
+
+        if (response.Item is null || response.Item.Count == 0)
+            return null;
+
+        return MapItemToRecord(response.Item);
+    }
+
     private static DynamoDbCacheRecord MapItemToRecord(Dictionary<string, AttributeValue> item) =>
         new DynamoDbCacheRecord
         {
             CacheKey = item["CacheKey"].S,
-            Payload = item["Payload"].S,
+            Payload = item.TryGetValue("Payload", out var pay)
+                ? pay.S
+                : null,
             ExpiresAtUtc = DateTimeOffset.FromUnixTimeSeconds(long.Parse(item["ExpiresAtUnix"].N)),
             AbsoluteExpiresAtUtc = item.TryGetValue("AbsoluteExpiresAtUnix", out var abs)
                 ? DateTimeOffset.FromUnixTimeSeconds(long.Parse(abs.N))
@@ -316,7 +335,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
     private List<TransactWriteItem> BuildSetTransaction(
         string cacheKey,
-        string payload,
+        string? payload,
         ResolvedExpiry resolved,
         IReadOnlyCollection<string> newTags,
         IReadOnlyCollection<string> oldTags)
@@ -326,9 +345,11 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
         var cacheItem = new Dictionary<string, AttributeValue>
         {
             ["CacheKey"] = new() { S = cacheKey },
-            ["Payload"] = new() { S = payload },
             ["ExpiresAtUnix"] = new() { N = expiresAtUnix.ToString() }
         };
+
+        if (!string.IsNullOrWhiteSpace(payload))
+            cacheItem["Payload"] = new() { S = payload };
 
         if (newTags.Count > 0)
             cacheItem["Tags"] = new() { SS = newTags.ToList() };
