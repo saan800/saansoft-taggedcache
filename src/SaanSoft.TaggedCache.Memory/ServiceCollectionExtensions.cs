@@ -6,11 +6,12 @@ namespace SaanSoft.TaggedCache.Memory;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Configure ITagg<see cref="ITaggedCache"/> backed by MemoryDistributedCache and register it as a service.
+    /// Configure <see cref="ITaggedCache"/> backed by in-process memory and register it as a service.
     /// Also registers <see cref="IDistributedCache"/>, so other dependencies can use that interface if they prefer and don't need tagging specific cache.
     /// </summary>
     /// <remarks>
-    /// IMPORTANT: It is not recommended to use this in production environments, as it does not support distributed caching and may lead to cache inconsistencies in multi-instance scenarios.
+    /// IMPORTANT: Not recommended for production environments — does not support distributed caching and will produce cache inconsistencies in multi-instance deployments.
+    /// <see cref="ITaggedCache"/> is registered as <c>Singleton</c> because the in-process tag index must be shared across all requests.
     /// </remarks>
     public static IServiceCollection AddMemoryTaggedCache(this IServiceCollection services, MemoryTaggedCacheOptions? cacheOptions = null)
     {

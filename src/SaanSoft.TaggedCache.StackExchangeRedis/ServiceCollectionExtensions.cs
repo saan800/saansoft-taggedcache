@@ -11,9 +11,14 @@ public static class ServiceCollectionExtensions
     /// Also registers <see cref="IDistributedCache"/>, so other dependencies can use that interface if they prefer and don't need tagging specific cache.
     /// IMPORTANT: you must register <see cref="IConnectionMultiplexer"/> in the service collection yourself.
     /// </summary>
+    /// <remarks>
+    /// <see cref="ITaggedCache"/> is registered as <c>Scoped</c>; all cache state lives in Redis.
+    /// <see cref="RedisTaggedCacheOptions"/> is registered as <c>Singleton</c>.
+    /// </remarks>
     public static IServiceCollection AddRedisTaggedCache(this IServiceCollection services, RedisTaggedCacheOptions? cacheOptions = null)
     {
-        services.AddScoped(_ => cacheOptions ??= new RedisTaggedCacheOptions());
+        var options = cacheOptions ?? new RedisTaggedCacheOptions();
+        services.AddSingleton(_ => options);
         services.AddScoped<ITaggedCache, RedisTaggedCache>();
         services.AddDistributedCache();
 

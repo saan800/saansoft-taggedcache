@@ -88,7 +88,7 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
             {
                 memoryCache.Remove(normalizedCacheKey);
 
-                foreach (var tag in existing?.Tags ?? [])
+                foreach (var tag in existing.Tags)
                 {
                     if (_tagIndex.TryGetValue(tag, out var keys))
                     {
@@ -134,14 +134,13 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
         var cacheKey = record.CacheKey;
         if (memoryCache.TryGetValue<MemoryCacheRecord>(cacheKey, out var oldRecord) && oldRecord is not null)
         {
-            await RemoveRecordInternalAsync(cacheKey, record, ct);
+            await RemoveRecordInternalAsync(cacheKey, oldRecord, ct);
         }
 
-        var memCacheOptions = new MemoryCacheEntryOptions();
-
-        if (record.AbsoluteExpiresAtUtc.HasValue)
-            memCacheOptions.AbsoluteExpiration = record.AbsoluteExpiresAtUtc.Value;
-
+        var memCacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpiration = record.ExpiresAtUtc
+        };
         if (record.SlidingExpiration.HasValue)
             memCacheOptions.SlidingExpiration = record.SlidingExpiration.Value;
 
@@ -172,7 +171,15 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
             keys[cacheKey] = 0;
         }
 
-        // TODO: remove obsolte tags
+        foreach (var tag in obsoleteTags)
+        {
+            if (_tagIndex.TryGetValue(tag, out var staleKeys))
+            {
+                staleKeys.TryRemove(cacheKey, out _);
+                if (staleKeys.IsEmpty)
+                    _tagIndex.TryRemove(tag, out _);
+            }
+        }
     }
 
     protected override async Task<HashSet<string>> GetCacheKeysForTagAsync(string normalizedTag, CancellationToken ct)

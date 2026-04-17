@@ -68,7 +68,7 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
         for (var i = 0; i < cacheKeysArray.Length; i++)
         {
             var cacheKey = cacheKeysArray[i];
-            var val = values.Count() > i ? values[i] : RedisValue.Null;
+            var val = values.Length > i ? values[i] : RedisValue.Null;
             result.Add(cacheKey, RedisValueToCacheRecord(val));
         }
         return result;

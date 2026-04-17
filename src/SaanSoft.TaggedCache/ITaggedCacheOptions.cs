@@ -14,7 +14,7 @@ public interface ITaggedCacheOptions
     /// Default: 0.25 (refresh when 25% of the sliding expiration duration is left)
     /// Must be greater than 0 and less than or equal to 1.
     /// </remarks>
-    decimal SlidingRefreshThresholdFraction { get; }
+    double SlidingRefreshThresholdFraction { get; }
 
     /// <summary>
     /// Prefix for all tag cache items, so can easily differentiate between normal object cache and tag cache.

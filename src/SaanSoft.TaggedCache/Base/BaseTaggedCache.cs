@@ -35,13 +35,31 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         var cachedRecords = await GetManyRecordsInternalAsync(normalizedKeys, ct);
 
         var results = new Dictionary<string, T?>();
-        foreach( var kvp in cachedRecords)
+        var nowUtc = DateTimeOffset.UtcNow;
+        var expiredKeys = new List<string>();
+
+        foreach (var kvp in cachedRecords)
         {
             if (kvp.Value == null)
-                results.Add(kvp.Key, default);
-            else
-                results.Add(kvp.Key, JsonSerializer.Deserialize<T>(kvp.Value.PayloadAsString(), cacheOptions.JsonSerializerOptions));
+            {
+                results[kvp.Key] = default;
+                continue;
+            }
+
+            if (kvp.Value.ExpiresAtUtc <= nowUtc)
+            {
+                expiredKeys.Add(kvp.Key);
+                results[kvp.Key] = default;
+                continue;
+            }
+
+            await TryRefreshSlidingAsync(kvp.Value, nowUtc, ct);
+            results[kvp.Key] = JsonSerializer.Deserialize<T>(kvp.Value.PayloadAsString(), cacheOptions.JsonSerializerOptions);
         }
+
+        if (expiredKeys.Count > 0)
+            await RemoveManyAsync(expiredKeys, ct);
+
         return results;
     }
 
@@ -291,9 +309,7 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         var tagKey = $"{prefix}{tag.Trim().ToLowerInvariant()}";
 
         if (!string.IsNullOrWhiteSpace(prefix) && tagKey.StartsWith($"{prefix}{prefix}", StringComparison.OrdinalIgnoreCase))
-        {
-            tagKey = tagKey.Replace($"{prefix}{prefix}", prefix, StringComparison.OrdinalIgnoreCase);
-        }
+            tagKey = tagKey.Substring(prefix.Length);
         return tagKey;
     }
 

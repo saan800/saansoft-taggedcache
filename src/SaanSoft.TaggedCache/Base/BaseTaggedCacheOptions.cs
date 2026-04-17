@@ -5,16 +5,16 @@ namespace SaanSoft.TaggedCache.Base;
 
 public abstract class BaseTaggedCacheOptions : ITaggedCacheOptions
 {
-    private decimal _slidingRefreshThresholdFraction = 0.25m;
+    private double _slidingRefreshThresholdFraction = 0.25;
     private string _tagKeyPrefix = "tag:";
 
-    public decimal SlidingRefreshThresholdFraction
+    public double SlidingRefreshThresholdFraction
     {
         get => _slidingRefreshThresholdFraction;
         set
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value);
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 1.0m);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 1.0);
             _slidingRefreshThresholdFraction = value;
         }
     }
