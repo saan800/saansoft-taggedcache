@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.DynamoDBv2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SaanSoft.TaggedCache\SaanSoft.TaggedCache.csproj" />
+  </ItemGroup>
+</Project>

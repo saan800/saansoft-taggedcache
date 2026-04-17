@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "AWSSDK.DynamoDBv2": {
+        "type": "Direct",
+        "requested": "[4.0.10.5, )",
+        "resolved": "4.0.10.5",
+        "contentHash": "ULdgADM2DzrNXDD7KSCzhvMIFs/lHXclHnuvqNrQVM8v3Gf61E6g+CgHOfY6ZIdNcgtanI3BsLVdJXMIYWxnbw==",
+        "dependencies": {
+          "AWSSDK.Core": "[4.0.3.6, 5.0.0)"
+        }
+      },
+      "AWSSDK.Core": {
+        "type": "Transitive",
+        "resolved": "4.0.3.6",
+        "contentHash": "bx61NSP9bQ5BTPXGzyhS7f4d+YzIiSelsblj8JALHp5uoYKVRnoRTbWb3lyUTdzJ9UZj7Q7JiQ8sJJ5JHQ5Jrg=="
+      },
+      "Microsoft.Extensions.Primitives": {
+        "type": "Transitive",
+        "resolved": "10.0.5",
+        "contentHash": "/HUHJ0tw/LQvD0DZrz50eQy/3z7PfX7WWEaXnjKTV9/TNdcgFlNTZGo49QhS7PTmhDqMyHRMqAXSBxLh0vso4g=="
+      },
+      "saansoft.taggedcache": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Abstractions": "[10.0.5, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.5, )"
+        }
+      },
+      "Microsoft.Extensions.Caching.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.5, )",
+        "resolved": "10.0.5",
+        "contentHash": "k/QDdQ94/0Shi0KfU+e12m73jfQo+3JpErTtgpZfsCIqkvdEEO0XIx6R+iTbN55rNPaNhOqNY4/sB+jZ8XxVPw==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "10.0.5"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.5, )",
+        "resolved": "10.0.5",
+        "contentHash": "iVMtq9eRvzyhx8949EGT0OCYJfXi737SbRVzWXE5GrOgGj5AaZ9eUuxA/BSUfmOMALKn/g8KfFaNQw0eiB3lyA=="
+      }
+    }
+  }
+}

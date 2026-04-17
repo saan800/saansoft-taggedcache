@@ -1,0 +1,66 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>default</LangVersion>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
+    <RestoreLockedMode>false</RestoreLockedMode>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn> <!-- optional: hides missing XML comment warnings -->
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IsTestProject Condition="$(MSBuildProjectName.Contains('.Tests.'))">true</IsTestProject>
+    <IsTestProject Condition="$(MSBuildProjectName.EndsWith('.Tests'))">true</IsTestProject>
+    <IsTestProject Condition="'$(IsPackable)' == 'true'">false</IsTestProject>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">false</IsTestProject>
+
+    <IsPackable Condition="'$(IsTestProject)' == 'true'">false</IsPackable>
+    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsTestProject)' == 'true'">
+    <NoWarn>CS1591;CS8602;CS8625;CS8618</NoWarn>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutput>$([System.IO.Path]::Combine($(MSBuildProjectDirectory), "../../", 'reports', 'coverage'))/</CoverletOutput>
+    <CoverletOutputFormat>opencover,json</CoverletOutputFormat>
+    <MergeWith>$(CoverletOutput)/coverage.json</MergeWith>
+    <Exclude>[MonsterList.Tests.*]*,[xunit.*]*</Exclude>
+  </PropertyGroup>
+
+
+  <ItemGroup Condition=" '$(IsTestProject)' == 'true' ">
+    <PackageReference Include="AutoFixture.AutoFakeItEasy" />
+    <PackageReference Include="AutoFixture.Xunit2" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="GitHubActionsTestLogger">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(IsTestProject)' == 'true'">
+    <Using Include="AwesomeAssertions" />
+    <Using Include="FakeItEasy" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>
