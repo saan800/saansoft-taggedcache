@@ -58,7 +58,7 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
             return null;
 
         var nowUtc = DateTimeOffset.UtcNow;
-        if (record.ExpiresAtUtc <= nowUtc || (record.AbsoluteExpiresAtUtc.HasValue && record.AbsoluteExpiresAtUtc.Value <= nowUtc))
+        if (record.ExpiresAtUtc <= nowUtc)
         {
             await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return null;

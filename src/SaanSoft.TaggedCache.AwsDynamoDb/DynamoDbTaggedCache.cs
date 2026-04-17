@@ -75,19 +75,23 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
     protected override async Task<DynamoDbCacheRecord?> GetRecordInternalAsync(string normalizedCacheKey, CancellationToken ct)
     {
-        var response = await dynamoDb.GetItemAsync(new GetItemRequest
+        var record = await GetDynamoDbCacheRecordAsync(normalizedCacheKey, ct);
+        if (record == null) return null;
+
+        var nowUtc = DateTimeOffset.UtcNow;
+        if (record.ExpiresAtUtc <= nowUtc)
         {
-            TableName = cacheOptions.CacheTableName,
-            Key = new Dictionary<string, AttributeValue>
-            {
-                ["CacheKey"] = new() { S = normalizedCacheKey }
-            }
-        }, ct);
-
-        if (response.Item is null || response.Item.Count == 0)
+            await RemoveRecordInternalAsync(normalizedCacheKey, record, ct);
             return null;
+        }
 
-        return MapItemToRecord(response.Item);
+        if (await TryRefreshSlidingAsync(record, nowUtc, ct))
+        {
+            var refreshed = await GetDynamoDbCacheRecordAsync(normalizedCacheKey, ct);
+            if (refreshed is not null) return refreshed;
+        }
+
+        return record;
     }
 
     protected override async Task<Dictionary<string, DynamoDbCacheRecord?>> GetManyRecordsInternalAsync(
@@ -231,8 +235,8 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
     protected override async Task UpdateExpiryInternalAsync(string normalizedCacheKey, DateTimeOffset expiresAtUtc, DateTimeOffset? absoluteExpiresAtUtc, TimeSpan? slidingExpiration, CancellationToken ct)
     {
-        var record = await GetRecordInternalAsync(normalizedCacheKey, ct);
-        if (record == null) return;
+        var record = await GetDynamoDbCacheRecordAsync(normalizedCacheKey, ct);
+        if (record is null) return;
 
         if (expiresAtUtc <= DateTimeOffset.UtcNow)
         {
@@ -291,6 +295,23 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
             UpdateExpression = updateExpression,
             ExpressionAttributeValues = attributeValues
         }, ct);
+    }
+
+    private async Task<DynamoDbCacheRecord?> GetDynamoDbCacheRecordAsync(string normalizedCacheKey, CancellationToken ct)
+    {
+        var response = await dynamoDb.GetItemAsync(new GetItemRequest
+        {
+            TableName = cacheOptions.CacheTableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                ["CacheKey"] = new() { S = normalizedCacheKey }
+            }
+        }, ct);
+
+        if (response.Item is null || response.Item.Count == 0)
+            return null;
+
+        return MapItemToRecord(response.Item);
     }
 
     private static DynamoDbCacheRecord MapItemToRecord(Dictionary<string, AttributeValue> item) =>
