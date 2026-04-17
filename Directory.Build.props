@@ -33,7 +33,6 @@
     <Exclude>[MonsterList.Tests.*]*,[xunit.*]*</Exclude>
   </PropertyGroup>
 
-
   <ItemGroup Condition=" '$(IsTestProject)' == 'true' ">
     <PackageReference Include="AutoFixture.AutoFakeItEasy" />
     <PackageReference Include="AutoFixture.Xunit2" />

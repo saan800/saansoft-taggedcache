@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Testcontainers.Redis" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\SaanSoft.TaggedCache.StackExchangeRedis\SaanSoft.TaggedCache.StackExchangeRedis.csproj" />
     <ProjectReference Include="..\SaanSoft.Tests.TaggedCache\SaanSoft.Tests.TaggedCache.csproj" />
   </ItemGroup>

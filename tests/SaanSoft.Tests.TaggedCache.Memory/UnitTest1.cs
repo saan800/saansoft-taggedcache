@@ -1,4 +1,4 @@
-﻿namespace SaanSoft.Tests.TaggedCache.Memory;
+namespace SaanSoft.Tests.TaggedCache.Memory;
 
 public class UnitTest1
 {

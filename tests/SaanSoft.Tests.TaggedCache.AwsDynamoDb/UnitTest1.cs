@@ -1,4 +1,4 @@
-﻿namespace SaanSoft.Tests.TaggedCache.AwsDynamoDb;
+namespace SaanSoft.Tests.TaggedCache.AwsDynamoDb;
 
 public class UnitTest1
 {

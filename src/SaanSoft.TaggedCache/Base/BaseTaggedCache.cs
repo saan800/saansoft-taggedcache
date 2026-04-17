@@ -217,6 +217,8 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         await RemoveManyAsync(cacheKeys, ct);
     }
 
+    public abstract Task DisposeAsync();
+
     /// <remarks>
     /// Accepts an already-normalized key — avoids double-normalization on internal call paths
     /// </remarks>

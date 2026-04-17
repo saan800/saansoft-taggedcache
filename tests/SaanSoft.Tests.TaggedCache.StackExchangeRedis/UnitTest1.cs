@@ -1,4 +1,4 @@
-﻿namespace SaanSoft.Tests.TaggedCache.StackExchangeRedis;
+namespace SaanSoft.Tests.TaggedCache.StackExchangeRedis;
 
 public class UnitTest1
 {
