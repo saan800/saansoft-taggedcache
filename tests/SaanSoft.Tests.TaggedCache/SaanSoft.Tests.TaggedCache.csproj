@@ -5,4 +5,9 @@
   </PropertyGroup>
 
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SaanSoft.TaggedCache\SaanSoft.TaggedCache.csproj" />
+  </ItemGroup>
+
+
 </Project>

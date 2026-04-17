@@ -12,6 +12,9 @@
   </Folder>
 
   <Folder Name="/tests/">
+    <Project Path="tests/SaanSoft.Tests.TaggedCache.AwsDynamoDb/SaanSoft.Tests.TaggedCache.AwsDynamoDb.csproj" Id="ccb8c47c-4315-4746-bd40-c2a1a3667ef6" />
+    <Project Path="tests/SaanSoft.Tests.TaggedCache.Memory/SaanSoft.Tests.TaggedCache.Memory.csproj" Id="61146135-1d5c-495f-8bb2-2c6d5b878807" />
+    <Project Path="tests/SaanSoft.Tests.TaggedCache.StackExchangeRedis/SaanSoft.Tests.TaggedCache.StackExchangeRedis.csproj" Id="b54fb755-85c2-4d17-883c-e64fb510568f" />
     <Project Path="tests/SaanSoft.Tests.TaggedCache/SaanSoft.Tests.TaggedCache.csproj" Id="b8e23bdd-6d87-493b-9237-97b472da46fd" />
   </Folder>
   <Project Path="src/SaanSoft.TaggedCache.AwsDynamoDb/SaanSoft.TaggedCache.AwsDynamoDb.csproj" Id="96c129e3-6493-4476-ba12-bac8d0250030" />
