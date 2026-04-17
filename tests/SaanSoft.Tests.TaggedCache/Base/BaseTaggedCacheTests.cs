@@ -9,13 +9,6 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     protected abstract Task<ITaggedCache> CreateCache();
 
-    /// <summary>
-    /// Call from an <see cref="InitializeAsync"/> override when infrastructure is unavailable.
-    /// Sets Cache to a stub that throws SkipException from within each test method body,
-    /// which [SkippableFact] catches and marks as Skipped.
-    /// </summary>
-    protected void SetSkipCache(string reason) => Cache = new SkipTaggedCache(reason);
-
     public virtual async Task InitializeAsync()
     {
         Cache = await CreateCache();
@@ -28,14 +21,14 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- GetAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAsync_KeyNotFound_ReturnsNull()
     {
         var result = await Cache.GetAsync<TestObject>("nonexistent-key");
         result.Should().BeNull();
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAsync_AfterSet_ReturnsValue()
     {
         var expected = new TestObject("Alice", 42);
@@ -45,7 +38,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         result.Should().Be(expected);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAsync_KeyCaseInsensitive_ReturnsSameValue()
     {
         var expected = new TestObject("Bob", 7);
@@ -55,7 +48,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         result.Should().Be(expected);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAsync_KeyWithWhitespace_NormalizedAndRetrieved()
     {
         var expected = new TestObject("Carol", 3);
@@ -67,7 +60,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- GetPayloadAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task GetPayloadAsync_AfterSet_ReturnsJson()
     {
         var value = new TestObject("Dave", 99);
@@ -78,7 +71,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         payload.Should().Contain("Dave");
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetPayloadAsync_KeyNotFound_ReturnsNull()
     {
         var result = await Cache.GetPayloadAsync("missing-payload");
@@ -87,7 +80,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- SetAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task SetAsync_OverwriteExistingKey_ReturnsNewValue()
     {
         await Cache.SetAsync("overwrite-key", new TestObject("Original", 1));
@@ -97,7 +90,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         result.Should().Be(new TestObject("Updated", 2));
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task SetAsync_WithTaggedCacheItem_RetrievableAndTagged()
     {
         var item = new TaggedCacheItem<TestObject>
@@ -116,7 +109,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- GetManyAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task GetManyAsync_MixedExistingAndMissing_ReturnsCorrectValues()
     {
         await Cache.SetAsync("multi-a", new TestObject("A", 1));
@@ -131,7 +124,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- SetManyAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task SetManyAsync_MultipleItems_AllRetrievable()
     {
         var items = new TaggedCacheItem<TestObject>[]
@@ -149,7 +142,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- RemoveAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveAsync_ExistingKey_ReturnsNullAfterRemoval()
     {
         await Cache.SetAsync("remove-me", new TestObject("ToRemove", 0));
@@ -158,7 +151,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("remove-me")).Should().BeNull();
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveAsync_NonexistentKey_DoesNotThrow()
     {
         await Cache.RemoveAsync("does-not-exist");
@@ -166,7 +159,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- RemoveManyAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveManyAsync_MultipleKeys_AllRemoved()
     {
         await Cache.SetAsync("rm-a", new TestObject("A", 1));
@@ -182,7 +175,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- RemoveByTagAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveByTagAsync_TaggedEntries_AllRemoved()
     {
         await Cache.SetAsync("tag-a", new TestObject("A", 1), tags: ["product:1"]);
@@ -194,7 +187,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("tag-b")).Should().BeNull();
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveByTagAsync_UntaggedEntries_NotAffected()
     {
         await Cache.SetAsync("tagged-item", new TestObject("Tagged", 1), tags: ["some-tag"]);
@@ -206,7 +199,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("untagged-item")).Should().NotBeNull();
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveByTagAsync_TagCaseInsensitive_RemovesEntry()
     {
         await Cache.SetAsync("ci-tagged", new TestObject("X", 1), tags: ["MyTag"]);
@@ -216,7 +209,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("ci-tagged")).Should().BeNull();
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveByTagAsync_NonexistentTag_DoesNotThrow()
     {
         await Cache.RemoveByTagAsync("nonexistent-tag");
@@ -224,7 +217,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- RemoveByTagsAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task RemoveByTagsAsync_MultipleTaggedEntries_AllMatchingRemoved()
     {
         await Cache.SetAsync("tags-a", new TestObject("A", 1), tags: ["region:us"]);
@@ -242,7 +235,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- Tag update on overwrite ----
 
-    [SkippableFact]
+    [Fact]
     public async Task SetAsync_OverwriteWithDifferentTags_OldTagNoLongerInvalidates()
     {
         await Cache.SetAsync("retag-key", new TestObject("V1", 1), tags: ["old-tag"]);
@@ -253,7 +246,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("retag-key")).Should().Be(new TestObject("V2", 2));
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task SetAsync_OverwriteWithDifferentTags_NewTagInvalidates()
     {
         await Cache.SetAsync("retag-key2", new TestObject("V1", 1), tags: ["old-tag2"]);
@@ -266,7 +259,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- Expiry ----
 
-    [SkippableFact]
+    [Fact]
     public async Task SetAsync_AbsoluteExpiry_ReturnsNullAfterExpiry()
     {
         var options = new DistributedCacheEntryOptions
@@ -280,7 +273,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("expiring-key")).Should().BeNull();
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task SetAsync_AbsoluteExpiry_ReturnableBeforeExpiry()
     {
         var options = new DistributedCacheEntryOptions
@@ -294,7 +287,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     // ---- GetOrCreateAsync ----
 
-    [SkippableFact]
+    [Fact]
     public async Task GetOrCreateAsync_KeyNotFound_CallsFactory()
     {
         var factoryCalled = 0;
@@ -311,7 +304,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         result.Should().Be(new TestObject("Created", 1));
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetOrCreateAsync_KeyExists_DoesNotCallFactory()
     {
         await Cache.SetAsync("existing-create-key", new TestObject("Existing", 1));
@@ -329,7 +322,7 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         result.Should().Be(new TestObject("Existing", 1));
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetOrCreateAsync_AfterCreate_SubsequentGetReturnsCachedValue()
     {
         await Cache.GetOrCreateAsync<TestObject>(
