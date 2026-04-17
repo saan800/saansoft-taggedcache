@@ -1,0 +1,24 @@
+#!/bin/sh
+
+rootDirectory="$(dirname -- "$0")/.."
+source "$rootDirectory/scripts/colours.sh"
+export ROOT_DIR="$rootDirectory"
+
+echo "${CYAN}Running pre-commit hooks${NC}"
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+"$rootDirectory/scripts/validate-branch-name.sh"
+"$rootDirectory/scripts/lint-dotnet.sh" "$staged_files"
+
+# Check the exit code of the script
+if [ $? -ne 0 ]; then
+    echo "${RED}Error: Script failed, aborting commit.${NC}"
+    exit 1
+fi
+
+# Add any modified files to the staging area
+git add $staged_files
+
+echo ""
+exit 0

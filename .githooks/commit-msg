@@ -1,0 +1,22 @@
+#!/bin/sh
+
+rootDirectory="$(dirname -- "$0")/.."
+source "$rootDirectory/scripts/colours.sh"
+export ROOT_DIR="$rootDirectory"
+
+echo "${CYAN}Running commit-msg hooks${NC}"
+
+# Read the commit message from the file
+commit_message_file=$1
+commit_message=$(cat "$commit_message_file")
+
+"$rootDirectory/scripts/validate-commit-message.sh" "$commit_message"
+
+# Check the exit code of the script
+if [ $? -ne 0 ]; then
+    echo "${RED}Error: Script failed, aborting commit.${NC}"
+    exit 1
+fi
+
+echo ""
+exit 0

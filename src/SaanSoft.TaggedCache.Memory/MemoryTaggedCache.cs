@@ -185,4 +185,10 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
         return dict.Keys
             .ToHashSet<string>(StringComparer.OrdinalIgnoreCase);
     }
+
+    public override Task DisposeAsync()
+    {
+        memoryCache.Dispose();
+        return Task.CompletedTask;
+    }
 }

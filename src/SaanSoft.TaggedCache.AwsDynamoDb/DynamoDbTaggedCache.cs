@@ -446,4 +446,10 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
             }
         }
     }
+
+    public override Task DisposeAsync()
+    {
+        dynamoDb.Dispose();
+        return Task.CompletedTask;
+    }
 }

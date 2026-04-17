@@ -33,7 +33,6 @@
     <Exclude>[MonsterList.Tests.*]*,[xunit.*]*</Exclude>
   </PropertyGroup>
 
-
   <ItemGroup Condition=" '$(IsTestProject)' == 'true' ">
     <PackageReference Include="AutoFixture.AutoFakeItEasy" />
     <PackageReference Include="AutoFixture.Xunit2" />
@@ -52,6 +51,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
+    <PackageReference Include="Xunit.SkippableFact" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

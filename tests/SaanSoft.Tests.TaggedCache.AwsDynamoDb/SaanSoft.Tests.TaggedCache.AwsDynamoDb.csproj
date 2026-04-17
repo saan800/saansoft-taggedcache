@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Testcontainers.DynamoDb" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\SaanSoft.TaggedCache.AwsDynamoDb\SaanSoft.TaggedCache.AwsDynamoDb.csproj" />
     <ProjectReference Include="..\SaanSoft.Tests.TaggedCache\SaanSoft.Tests.TaggedCache.csproj" />
   </ItemGroup>
