@@ -9,10 +9,14 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
 
     protected abstract Task<ITaggedCache> CreateCache();
 
+    async ValueTask IAsyncLifetime.InitializeAsync()
+        => await InitializeAsync();
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+        => await DisposeAsync();
+
     public virtual async Task InitializeAsync()
-    {
-        Cache = await CreateCache();
-    }
+        => Cache = await CreateCache();
 
     public virtual Task DisposeAsync()
         => Cache.DisposeAsync();
