@@ -126,6 +126,94 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         result["multi-missing"].Should().BeNull();
     }
 
+    // ---- GetManyByTagAsync ----
+
+    [Fact]
+    public async Task GetManyByTagAsync_TagNotFound_ReturnsEmpty()
+    {
+        var result = await Cache.GetManyByTagAsync<TestObject>("tag-fetch-missing", TestContext.Current.CancellationToken);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetManyByTagAsync_SingleTaggedItem_ReturnsItem()
+    {
+        var expected = new TestObject("Alpha", 1);
+        await Cache.SetAsync("tag-fetch-single", expected, tags: ["single-item-tag"], ct: TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetManyByTagAsync<TestObject>("single-item-tag", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(1);
+        result["tag-fetch-single"].Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task GetManyByTagAsync_MultipleItemsSameTag_ReturnsAll()
+    {
+        await Cache.SetAsync("shared-tag-item-a", new TestObject("A", 1), tags: ["shared-items-tag"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("shared-tag-item-b", new TestObject("B", 2), tags: ["shared-items-tag"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("shared-tag-item-c", new TestObject("C", 3), tags: ["shared-items-tag"], ct: TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetManyByTagAsync<TestObject>("shared-items-tag", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(3);
+        result["shared-tag-item-a"].Should().Be(new TestObject("A", 1));
+        result["shared-tag-item-b"].Should().Be(new TestObject("B", 2));
+        result["shared-tag-item-c"].Should().Be(new TestObject("C", 3));
+    }
+
+    [Fact]
+    public async Task GetManyByTagAsync_OnlyReturnsItemsMatchingTag()
+    {
+        await Cache.SetAsync("tag-fetch-matched", new TestObject("Match", 1), tags: ["target-fetch-tag"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("tag-fetch-other", new TestObject("Other", 2), tags: ["other-fetch-tag"], ct: TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetManyByTagAsync<TestObject>("target-fetch-tag", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(1);
+        result.Should().ContainKey("tag-fetch-matched");
+        result.Should().NotContainKey("tag-fetch-other");
+    }
+
+    [Fact]
+    public async Task GetManyByTagAsync_TagCaseInsensitive_ReturnsItem()
+    {
+        await Cache.SetAsync("tag-fetch-case", new TestObject("CI", 1), tags: ["CASE-TAG-FETCH"], ct: TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetManyByTagAsync<TestObject>("case-tag-fetch", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(1);
+        result["tag-fetch-case"].Should().Be(new TestObject("CI", 1));
+    }
+
+    [Fact]
+    public async Task GetManyByTagAsync_UntaggedItems_NotIncluded()
+    {
+        await Cache.SetAsync("tag-fetch-tagged", new TestObject("Tagged", 1), tags: ["tagged-only-fetch"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("tag-fetch-untagged", new TestObject("Untagged", 2), ct: TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetManyByTagAsync<TestObject>("tagged-only-fetch", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(1);
+        result.Should().ContainKey("tag-fetch-tagged");
+        result.Should().NotContainKey("tag-fetch-untagged");
+    }
+
+    [Fact]
+    public async Task GetManyByTagAsync_ExpiredItem_NotReturned()
+    {
+        var options = new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(50)
+        };
+        await Cache.SetAsync("tag-fetch-expiring", new TestObject("Expiring", 1), options, tags: ["expiry-fetch-tag"], ct: TestContext.Current.CancellationToken);
+
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetManyByTagAsync<TestObject>("expiry-fetch-tag", TestContext.Current.CancellationToken);
+        result.Should().BeEmpty();
+    }
+
     // ---- SetManyAsync ----
 
     [Fact]
@@ -219,17 +307,17 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         await Cache.RemoveByTagAsync("non-existent-tag", TestContext.Current.CancellationToken);
     }
 
-    // ---- RemoveByTagsAsync ----
+    // ---- RemoveByAnyTagAsync ----
 
     [Fact]
-    public async Task RemoveByTagsAsync_MultipleTaggedEntries_AllMatchingRemoved()
+    public async Task RemoveByAnyTagAsync_MultipleTaggedEntries_AllMatchingRemoved()
     {
         await Cache.SetAsync("tags-a", new TestObject("A", 1), tags: ["region:us"], ct: TestContext.Current.CancellationToken);
         await Cache.SetAsync("tags-b", new TestObject("B", 2), tags: ["region:eu"], ct: TestContext.Current.CancellationToken);
         await Cache.SetAsync("tags-c", new TestObject("C", 3), tags: ["region:ap"], ct: TestContext.Current.CancellationToken);
         await Cache.SetAsync("tags-keep", new TestObject("Keep", 4), tags: ["region:au"], ct: TestContext.Current.CancellationToken);
 
-        await Cache.RemoveByTagsAsync(["region:us", "region:eu", "region:ap"], TestContext.Current.CancellationToken);
+        await Cache.RemoveByAnyTagAsync(["region:us", "region:eu", "region:ap"], TestContext.Current.CancellationToken);
 
         (await Cache.GetAsync<TestObject>("tags-a", TestContext.Current.CancellationToken)).Should().BeNull();
         (await Cache.GetAsync<TestObject>("tags-b", TestContext.Current.CancellationToken)).Should().BeNull();

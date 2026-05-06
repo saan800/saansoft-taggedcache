@@ -28,7 +28,7 @@ public class DynamoDbTaggedCacheTests : BaseTaggedCacheTests
         );
 
         var options = new DynamoDbTaggedCacheOptions();
-        await db.ConfigureDynamoDbAsync(options);
+        await db.ConfigureDynamoDbTaggedCacheTables(options, new CacheTableOptions { BillingMode = BillingMode.PAY_PER_REQUEST });
 
         return new DynamoDbTaggedCache(db, options);
     }

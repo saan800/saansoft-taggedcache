@@ -43,9 +43,9 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
         await CleanupTagIndexAsync(tag);
     }
 
-    public override async Task RemoveByTagsAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
+    public override async Task RemoveByAnyTagAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
     {
-        await base.RemoveByTagsAsync(tags, ct);
+        await base.RemoveByAnyTagAsync(tags, ct);
         foreach (var tag in tags)
         {
             await CleanupTagIndexAsync(tag);
