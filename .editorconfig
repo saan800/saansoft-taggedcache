@@ -17,3 +17,9 @@ trim_trailing_whitespace = false
 [*.cs]
 indent_size = 4
 csharp_style_namespace_declarations = file_scoped:suggestion
+
+[*.lock.json]
+insert_final_newline = false
+
+# xUnit1051: Calls to methods which accept CancellationToken should use TestContext.Current.CancellationToken
+dotnet_diagnostic.xUnit1051.severity = none

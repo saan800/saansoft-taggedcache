@@ -1,8 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.Redis" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SaanSoft.TaggedCache.StackExchangeRedis\SaanSoft.TaggedCache.StackExchangeRedis.csproj" />

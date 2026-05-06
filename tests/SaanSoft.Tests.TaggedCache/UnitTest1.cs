@@ -1,4 +1,4 @@
-﻿namespace SaanSoft.Tests.TaggedCache;
+namespace SaanSoft.Tests.TaggedCache;
 
 public class UnitTest1
 {

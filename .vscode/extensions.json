@@ -3,5 +3,6 @@
     "editorconfig.editorconfig",
     "ms-dotnettools.csdevkit",
     "streetsidesoftware.code-spell-checker",
+    "anthropic.claude-code",
   ]
 }

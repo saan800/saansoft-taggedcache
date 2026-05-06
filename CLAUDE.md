@@ -35,7 +35,7 @@ dotnet pack
 
 ### Key Abstractions
 
-- **`ITaggedCache`** — Main interface extending `IDistributedCache`. Adds typed get/set, bulk operations, and `RemoveByTagAsync` / `RemoveByTagsAsync`.
+- **`ITaggedCache`** — Main interface extending `IDistributedCache`. Adds typed get/set, bulk operations, and `RemoveByTagAsync` / `RemoveByAnyTagAsync`.
 - **`ITaggedCacheOptions`** — Options interface: `SlidingRefreshThresholdFraction` (default 0.25), `TagKeyPrefix` (default `"tag:"`), `DefaultCacheOptions` (default 5 min absolute), `JsonSerializerOptions`.
 - **`BaseTaggedCache<TCacheRecord, TPayload>`** — Template method base class. Handles key/tag normalization (trim + lowercase, case-insensitive), expiry checking, sliding refresh, and tag fanout. Subclasses implement five protected abstract methods: `GetRecordInternalAsync`, `UpsertRecordInternalAsync`, `UpdateExpiryInternalAsync`, `RemoveRecordInternalAsync`, `GetCacheKeysForTagAsync`.
 - **`BaseCacheRecord<TPayload>`** — Stores key, payload, expiry times, sliding duration, and tags.
