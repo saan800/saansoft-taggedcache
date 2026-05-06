@@ -1,7 +1,7 @@
 ### :spiral_notepad: Description
 
 <!-- Please describe what you added, and add a screenshot if possible.
-     That makes it easier to understand the change so we can approve it faster. -->
+That makes it easier to understand the change so we can approve it faster. -->
 
 ### :white_check_mark: Checklist
 
