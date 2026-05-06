@@ -1,0 +1,22 @@
+changelog:
+  exclude:
+    labels:
+      - no-release
+    authors:
+      - dependabot
+  categories:
+    - title: 🔥🔥 Breaking Changes 🔥🔥
+      labels:
+        - breaking
+    - title: Features ✨
+      labels:
+        - feature
+    - title: Bug Fixes 🪲
+      labels:
+        - bug
+    - title: Dependency Updates 🎳
+      labels:
+        - dependencies
+    - title: Other 📝
+      labels:
+        - "*"
