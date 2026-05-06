@@ -4,7 +4,7 @@ namespace SaanSoft.Tests.TaggedCache.StackExchangeRedis;
 
 internal static class TestSetup
 {
-    // Runs at assembly load time — before TestcontainersSettings.cctor() accesses DOCKER_HOST.
+    // Runs at assembly load time — before TestcontainersSettings.ctor() accesses DOCKER_HOST.
     //
     // Docker Desktop's WSL2 integration sets DOCKER_HOST=npipe:////./pipe/docker_engine in the
     // shell environment so the Docker CLI can reach the Windows daemon. However, named pipes are

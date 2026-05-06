@@ -1,5 +1,7 @@
 abbrev
+awaiter
 beercss
+blazor
 bson
 codecov
 color
@@ -8,9 +10,11 @@ idempotency
 localstack
 Newtonsoft
 nojournal
+npipe
 openapi
 opencover
 prexisting
+retag
 Saan
 slnx
 Specflow
