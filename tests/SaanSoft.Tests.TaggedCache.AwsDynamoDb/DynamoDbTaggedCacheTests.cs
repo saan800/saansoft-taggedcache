@@ -27,7 +27,10 @@ public class DynamoDbTaggedCacheTests : BaseTaggedCacheTests
             }
         );
 
-        return new DynamoDbTaggedCache(db, new DynamoDbTaggedCacheOptions());
+        var options = new DynamoDbTaggedCacheOptions();
+        await db.ConfigureDynamoDbAsync(options);
+
+        return new DynamoDbTaggedCache(db, options);
     }
 
     public override async Task DisposeAsync()
