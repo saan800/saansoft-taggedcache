@@ -16,11 +16,9 @@
 
   <PropertyGroup>
     <IsTestProject Condition="$(MSBuildProjectName.Contains('.Tests.'))">true</IsTestProject>
-    <IsTestProject Condition="$(MSBuildProjectName.EndsWIth('.Tests'))">true</IsTestProject>
-    <IsTestProject Condition="'$(IsPackable)' == 'true'">false</IsTestProject>
+    <IsTestProject Condition="$(MSBuildProjectName.EndsWith('.Tests'))">true</IsTestProject>
     <IsTestProject Condition="'$(IsTestProject)' == ''">false</IsTestProject>
     <IsPackable Condition="'$(IsTestProject)' == 'true'">false</IsPackable>
-    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(IsTestProject)' == 'true'">
