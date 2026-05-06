@@ -19,7 +19,6 @@ jobs:
       dotnet-version: 10.0.x
       codecov-slug: "saan800/saansoft-taggedcache"
       is-release-branch: ${{ github.ref == 'refs/heads/main' }}
-      harden-runner-policy: audit
     secrets:
       GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
