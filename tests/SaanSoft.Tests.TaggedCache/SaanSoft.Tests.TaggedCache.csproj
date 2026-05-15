@@ -1,13 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
+    <!-- This project contains only abstract base test classes; no tests run directly -->
+    <TestingPlatformCommandLineArguments>--ignore-exit-code 5;8</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SaanSoft.TaggedCache\SaanSoft.TaggedCache.csproj" />
   </ItemGroup>
-
 
 </Project>

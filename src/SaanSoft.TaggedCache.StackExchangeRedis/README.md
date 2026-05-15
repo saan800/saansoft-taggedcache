@@ -10,7 +10,7 @@ dotnet add package SaanSoft.TaggedCache.StackExchangeRedis
 
 ## Setup
 
-You must register `IConnectionMultiplexer` yourself before calling `AddRedisTaggedCache`.
+You must register `IConnectionMultiplexer` yourself as well as calling `AddRedisTaggedCache`.
 
 ```csharp
 // Program.cs

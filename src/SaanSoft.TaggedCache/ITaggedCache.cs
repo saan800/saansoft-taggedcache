@@ -99,6 +99,11 @@ public interface ITaggedCache : IDistributedCache
     Task RemoveByAnyTagAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default);
 
     /// <summary>
+    /// Remove cached items by tags. Only items that match all of the provided tags will be removed from the cache.
+    /// </summary>
+    Task RemoveByAllTagsAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default);
+
+    /// <summary>
     /// Dispose of the cache and underlying infrastructure objects
     /// </summary>
     Task DisposeAsync();

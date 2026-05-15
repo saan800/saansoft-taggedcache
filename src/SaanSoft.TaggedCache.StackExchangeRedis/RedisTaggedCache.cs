@@ -175,11 +175,7 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
 
         var recordJson = JsonSerializer.Serialize(refreshedRecord, cacheOptions.JsonSerializerOptions);
 
-        var batch = _db.CreateBatch();
-        var tasks = new List<Task> { batch.StringSetAsync(normalizedCacheKey, recordJson, ttl) };
-
-        batch.Execute();
-        await Task.WhenAll(tasks);
+        await _db.StringSetAsync(normalizedCacheKey, recordJson, ttl);
     }
 
     protected override async Task<HashSet<string>> GetCacheKeysForTagAsync(string normalizedTag, CancellationToken ct)
@@ -191,7 +187,7 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
             double.NegativeInfinity,
             nowUnix);
 
-        var members = await _db.SortedSetRangeByRankAsync(normalizedTag, 0, -1);
+        var members = await _db.SortedSetRangeByRankAsync(normalizedTag);
         if (members.Length == 0)
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -199,7 +195,7 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
             .Where(static m => m.HasValue)
             .Select(static m => m.ToString())
             .Where(static s => !string.IsNullOrWhiteSpace(s))
-            .ToHashSet<string>(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     }
 

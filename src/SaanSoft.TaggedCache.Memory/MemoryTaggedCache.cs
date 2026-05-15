@@ -10,13 +10,6 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _tagIndex =
         new(StringComparer.Ordinal);
 
-    public override async Task<byte[]?> GetAsync(string cacheKey, CancellationToken ct = default)
-    {
-        var normalizedCacheKey = NormalizeCacheKey(cacheKey);
-        var record = await GetRecordInternalAsync(normalizedCacheKey, ct);
-        return record?.Payload;
-    }
-
     public override async Task SetAsync<T>(string cacheKey, T obj, DistributedCacheEntryOptions? options = null, IReadOnlyCollection<string>? tags = null, CancellationToken ct = default)
     {
         var normalizedCacheKey = NormalizeCacheKey(cacheKey);
@@ -177,18 +170,13 @@ public class MemoryTaggedCache(IMemoryCache memoryCache, MemoryTaggedCacheOption
         }
     }
 
-    protected override async Task<HashSet<string>> GetCacheKeysForTagAsync(string normalizedTag, CancellationToken ct)
+    protected override Task<HashSet<string>> GetCacheKeysForTagAsync(string normalizedTag, CancellationToken ct)
     {
         if (!_tagIndex.TryGetValue(normalizedTag, out var dict))
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return Task.FromResult(new HashSet<string>(StringComparer.OrdinalIgnoreCase));
 
-        return dict.Keys
-            .ToHashSet<string>(StringComparer.OrdinalIgnoreCase);
+        return Task.FromResult(dict.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase));
     }
 
-    public override Task DisposeAsync()
-    {
-        memoryCache.Dispose();
-        return Task.CompletedTask;
-    }
+    public override Task DisposeAsync() => Task.CompletedTask;
 }

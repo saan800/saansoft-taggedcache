@@ -12,7 +12,7 @@ dotnet build
 dotnet test
 
 # Run a single test project
-dotnet test tests/SaanSoft.TaggedCache.Tests/
+dotnet test tests/SaanSoft.Tests.TaggedCache/
 
 # Run a specific test
 dotnet test --filter "FullyQualifiedName~TestClassName.TestMethodName"
