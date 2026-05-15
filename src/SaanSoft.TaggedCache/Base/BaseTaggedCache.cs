@@ -252,12 +252,47 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
 
         foreach (var tag in normalizedTags)
         {
-            var tempCacheKeys = await GetCacheKeysForTagAsync(tag, ct);
-            foreach (var cacheKey in tempCacheKeys)
+            var cacheKeysForTag = await GetCacheKeysForTagAsync(tag, ct);
+            foreach (var cacheKey in cacheKeysForTag)
                 cacheKeys.Add(cacheKey);
         }
 
         await RemoveManyAsync(cacheKeys, ct);
+    }
+
+    public virtual async Task RemoveByAllTagsAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(tags);
+        var normalizedTags = NormalizeTags(tags);
+
+        IEnumerable<string> cacheKeys = [];
+        var isFirstTag = true;
+
+        foreach (var tag in normalizedTags)
+        {
+            var cacheKeysForTag = await GetCacheKeysForTagAsync(tag, ct);
+            if (isFirstTag)
+            {
+                // first time around - add all the keys found for the tag
+                foreach (var cacheKey in cacheKeysForTag)
+                    cacheKeys = cacheKeys.Append(cacheKey);
+                isFirstTag = false;
+                continue;
+            }
+            else
+            {
+                // only want cache keys that are found on all tags
+                cacheKeys = cacheKeys.Intersect(cacheKeysForTag);
+                if (!cacheKeys.Any())
+                    break;
+            }
+        }
+
+        // no cache keys found with all that tags, nothing else to do
+        if (!cacheKeys.Any()) return;
+
+
+        await RemoveManyAsync(cacheKeys.ToList(), ct);
     }
 
     public abstract Task DisposeAsync();

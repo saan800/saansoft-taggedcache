@@ -20,6 +20,7 @@
   </Folder>
   <Project Path="src/SaanSoft.TaggedCache.AwsDynamoDb/SaanSoft.TaggedCache.AwsDynamoDb.csproj" Id="96c129e3-6493-4476-ba12-bac8d0250030" />
   <Project Path="src/SaanSoft.TaggedCache.Memory/SaanSoft.TaggedCache.Memory.csproj" Id="50b4d8d9-0c22-48b2-9b2c-44c1c2e5813e" />
+  <Project Path="src/SaanSoft.TaggedCache.OutputCache/SaanSoft.TaggedCache.OutputCache.csproj" Id="d1ae6004-6326-46c3-a966-5d46ab0f0978" />
   <Project Path="src/SaanSoft.TaggedCache.StackExchangeRedis/SaanSoft.TaggedCache.StackExchangeRedis.csproj" Id="e6592bda-547b-4edb-826a-abf6b656d5c0" />
   <Project Path="src/SaanSoft.TaggedCache/SaanSoft.TaggedCache.csproj" Id="ddee2acd-68a4-4b61-a5ec-42560bb87803" />
 
