@@ -12,6 +12,7 @@ localstack
 Newtonsoft
 nojournal
 npipe
+outputcache
 openapi
 opencover
 prexisting

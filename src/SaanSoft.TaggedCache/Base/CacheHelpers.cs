@@ -28,9 +28,6 @@ public static class CacheHelpers
     public static byte[] AsByteArray<T>(this T obj, JsonSerializerOptions? jsonOptions = null)
         => JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
-    public static byte[] AsByteArray(this string str)
-        => System.Text.Encoding.UTF8.GetBytes(str);
-
     public static string AsString(this byte[] bytes)
         => System.Text.Encoding.UTF8.GetString(bytes);
 
