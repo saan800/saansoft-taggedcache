@@ -21,14 +21,14 @@ Their logical implementations should match, and test cases should be the same, j
 Where possible, generic tests should be written in `SaanSoft.Tests.TaggedCache` with a `ITaggedCache sut` parameter that is then
 configured by the infrastructure specific test projects.
 
-The test projects should setup `ITaggedCache sut` using `Testcontainers` for the required infrastructure.
+The test projects should setup `ITaggedCache sut` using docker `Testcontainers` for the required infrastructure.
 
 ## Framework & Libraries
 
 - **xUnit** - test framework (`[Fact]`, `[Theory]`, `[InlineData]`)
 - **AwesomeAssertions** - use for assertions (`result.Should.Be(...)`)
 - **FakeItEasy** - use for mocking interfaces; do NOT mock the database (use real in memory Lite servers instead)
-- **Testcontainers** - use for testing with lite / in memory cache store for the required infrastructure
+- **Testcontainers** - use for testing with lite / in memory cache store for the required infrastructure, runs in docker
 
 ## Test Naming
 

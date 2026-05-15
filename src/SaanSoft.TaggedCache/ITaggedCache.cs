@@ -15,6 +15,16 @@ public interface ITaggedCache : IDistributedCache
     Task<T?> GetAsync<T>(string cacheKey, CancellationToken ct = default);
 
     /// <summary>
+    /// Get the item from cache if it exists and is not expired.
+    /// If the item does not exist (or is expired) then the factory function will be called to create the item, which will then be cached and returned.
+    /// </summary>
+    /// <remarks>
+    /// If the item does not exist, the creation of it will be locked to the process to prevent a stampede within a single process.
+    /// For distributed deployments, multiple processes can still call the factory concurrently.
+    /// </remarks>
+    Task<T?> GetOrCreateAsync<T>(string cacheKey, Func<CancellationToken, Task<T?>> factory, DistributedCacheEntryOptions? options = null, IReadOnlyCollection<string>? tags = null, CancellationToken ct = default);
+
+    /// <summary>
     /// Bulk / batch get items from cache if they exists and are not expired.
     /// Returns a dictionary values for the given keys.
     /// If the value for a key is not found in the cache (or expired), the value will be null in the resulting dictionary
@@ -23,6 +33,11 @@ public interface ITaggedCache : IDistributedCache
     /// Does not throw on expiry, it will just return null and clean up the expired item(s) and any associated tags.
     /// </remarks>
     Task<Dictionary<string, T?>> GetManyAsync<T>(IReadOnlyCollection<string> cacheKeys, CancellationToken ct = default);
+
+    /// <summary>
+    /// Get all items from cache if they have the specified tag.
+    /// </summary>
+    Task<Dictionary<string, T>> GetManyByTagAsync<T>(string tag, CancellationToken ct = default);
 
     /// <summary>
     /// Get the raw payload of the cached item as a string if it exists and is not expired.
@@ -79,7 +94,12 @@ public interface ITaggedCache : IDistributedCache
     Task RemoveByTagAsync(string tag, CancellationToken ct = default);
 
     /// <summary>
-    /// Remove cached items by tags. All items with at least one tag will be removed from the cache.
+    /// Remove cached items by tags. Any item with at least one matching tag will be removed from the cache.
     /// </summary>
-    Task RemoveByTagsAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default);
+    Task RemoveByAnyTagAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default);
+
+    /// <summary>
+    /// Dispose of the cache and underlying infrastructure objects
+    /// </summary>
+    Task DisposeAsync();
 }

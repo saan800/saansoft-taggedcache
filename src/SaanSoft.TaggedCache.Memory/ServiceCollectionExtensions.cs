@@ -17,7 +17,8 @@ public static class ServiceCollectionExtensions
     {
         cacheOptions ??= new MemoryTaggedCacheOptions();
 
-        services.AddMemoryCache(o => {
+        services.AddMemoryCache(o =>
+        {
             cacheOptions.ConfigureMemoryCache?.Invoke(o);
         });
         services.AddSingleton(_ => cacheOptions);

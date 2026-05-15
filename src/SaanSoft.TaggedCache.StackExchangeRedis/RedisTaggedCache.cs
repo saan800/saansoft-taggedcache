@@ -43,9 +43,9 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
         await CleanupTagIndexAsync(tag);
     }
 
-    public override async Task RemoveByTagsAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
+    public override async Task RemoveByAnyTagAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
     {
-        await base.RemoveByTagsAsync(tags, ct);
+        await base.RemoveByAnyTagAsync(tags, ct);
         foreach (var tag in tags)
         {
             await CleanupTagIndexAsync(tag);
@@ -90,7 +90,7 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
     }
 
     protected override Task RemoveRecordInternalAsync(string normalizedCacheKey, RedisCacheRecord? existing, CancellationToken ct)
-        => RemoveManyRecordsInternalAsync(new Dictionary<string, RedisCacheRecord?>{ { normalizedCacheKey, existing } }, ct);
+        => RemoveManyRecordsInternalAsync(new Dictionary<string, RedisCacheRecord?> { { normalizedCacheKey, existing } }, ct);
 
     protected override async Task RemoveManyRecordsInternalAsync(Dictionary<string, RedisCacheRecord?> cachedRecords, CancellationToken ct)
     {
@@ -228,5 +228,10 @@ public class RedisTaggedCache(IConnectionMultiplexer redis, RedisTaggedCacheOpti
             return null;
 
         return JsonSerializer.Deserialize<RedisCacheRecord>(json, cacheOptions.JsonSerializerOptions);
+    }
+
+    public override async Task DisposeAsync()
+    {
+        await redis.DisposeAsync();
     }
 }

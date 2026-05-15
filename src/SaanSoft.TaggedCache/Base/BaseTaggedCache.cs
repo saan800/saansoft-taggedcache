@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Distributed;
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace SaanSoft.TaggedCache.Base;
@@ -27,6 +28,37 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
             return default;
 
         return JsonSerializer.Deserialize<T>(payload, cacheOptions.JsonSerializerOptions);
+    }
+
+
+    // Process-local locks prevent stampede within a single process.
+    // For distributed deployments, multiple processes can still call the factory concurrently.
+    protected readonly ConcurrentDictionary<string, SemaphoreSlim> _getOrCreateAsyncLocks = new(StringComparer.Ordinal);
+    public virtual async Task<T?> GetOrCreateAsync<T>(string cacheKey, Func<CancellationToken, Task<T?>> factory, DistributedCacheEntryOptions? options = null, IReadOnlyCollection<string>? tags = null, CancellationToken ct = default)
+    {
+        var result = await GetAsync<T>(cacheKey, ct);
+        if (result != null)
+            return result;
+
+        var semaphore = _getOrCreateAsyncLocks.GetOrAdd(cacheKey, static _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync(ct);
+        try
+        {
+            result = await GetAsync<T>(cacheKey, ct);
+            if (result != null)
+                return result;
+
+            result = await factory(ct);
+            if (result == null)
+                return result;
+
+            await SetAsync(cacheKey, result, options, tags, ct);
+            return result;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     public virtual async Task<Dictionary<string, T?>> GetManyAsync<T>(IReadOnlyCollection<string> cacheKeys, CancellationToken ct = default)
@@ -64,6 +96,17 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
             await RemoveManyAsync(expiredKeys, ct);
 
         return results;
+    }
+
+    public virtual async Task<Dictionary<string, T>> GetManyByTagAsync<T>(string tag, CancellationToken ct = default)
+    {
+        var normalizedTags = NormalizeTag(tag);
+        var cacheKeys = await GetCacheKeysForTagAsync(normalizedTags, ct);
+
+        var results = await GetManyAsync<T>(cacheKeys, ct);
+        return results
+            .Where(kvp => kvp.Value != null)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value!);
     }
 
     public virtual async Task<string?> GetPayloadAsync(string cacheKey, CancellationToken ct = default)
@@ -200,7 +243,7 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         await RemoveManyAsync(cacheKeys, ct);
     }
 
-    public virtual async Task RemoveByTagsAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
+    public virtual async Task RemoveByAnyTagAsync(IReadOnlyCollection<string> tags, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(tags);
         var normalizedTags = NormalizeTags(tags);
@@ -216,6 +259,8 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
 
         await RemoveManyAsync(cacheKeys, ct);
     }
+
+    public abstract Task DisposeAsync();
 
     /// <remarks>
     /// Accepts an already-normalized key — avoids double-normalization on internal call paths

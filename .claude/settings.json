@@ -4,5 +4,19 @@
     "csharp-lsp@claude-plugins-official": true,
     "microsoft-docs@claude-plugins-official": true,
     "github@claude-plugins-official": true
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(docker info *)",
+      "Bash(docker context *)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet run:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)"
+    ]
   }
 }
