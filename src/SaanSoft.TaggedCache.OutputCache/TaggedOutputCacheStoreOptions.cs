@@ -4,7 +4,6 @@ public class TaggedOutputCacheStoreOptions
 {
     private string _cacheKeyPrefix = "outputcache:";
 
-
     /// <summary>
     /// Prefix for all output cache items, so can easily differentiate between normal object cache and output cache.
     /// Set to null or "" for no prefix.

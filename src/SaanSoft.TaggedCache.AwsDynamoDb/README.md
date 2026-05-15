@@ -40,18 +40,25 @@ Check the [Setup](#Setup) section below for an example of running during app sta
 
 **Cache table** (`CacheTableName`):
 
-| Attribute | Type | Key |
-|-----------|------|-----|
-| `CacheKey` | String | Hash (partition) |
+| Attribute | Type | Key | Notes |
+|-----------|------|-----|-------|
+| `CacheKey` | String | Hash (partition) | |
+| `ExpiresAtUnix` | Number | — | Unix epoch seconds; used as the DynamoDB TTL attribute |
 
 **Tags table** (`TagTableName`):
 
-| Attribute | Type | Key |
-|-----------|------|-----|
-| `Tag` | String | Hash (partition) |
-| `CacheKey` | String | Range (sort) |
+| Attribute | Type | Key | Notes |
+|-----------|------|-----|-------|
+| `Tag` | String | Hash (partition) | |
+| `CacheKey` | String | Range (sort) | |
+| `ExpiresAtUnix` | Number | — | Unix epoch seconds; used as the DynamoDB TTL attribute |
 
-If you manage tables externally (e.g. via Terraform or CloudFormation), ensure the schemas match the above.
+### DynamoDB TTL
+
+Both tables use `ExpiresAtUnix` as the DynamoDB [Time to Live (TTL)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) attribute.
+TTL is configured automatically by `ConfigureDynamoDbTaggedCacheTables` — no manual setup is required.
+
+If you manage tables externally (e.g. via Terraform or CloudFormation), ensure the schemas match the above and enable TTL on `ExpiresAtUnix` for both tables.
 
 ## Setup
 

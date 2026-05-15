@@ -325,6 +325,66 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         (await Cache.GetAsync<TestObject>("tags-keep", TestContext.Current.CancellationToken)).Should().NotBeNull();
     }
 
+    // ---- RemoveByAllTagsAsync ----
+
+    [Fact]
+    public async Task RemoveByAllTagsAsync_NonExistentTags_DoesNotThrow()
+    {
+        await Cache.RemoveByAllTagsAsync(["all-non-existent-tag-a", "all-non-existent-tag-b"], TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task RemoveByAllTagsAsync_SingleTag_RemovesMatchingEntries()
+    {
+        await Cache.SetAsync("all-single-a", new TestObject("A", 1), tags: ["all-single-tag"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("all-single-b", new TestObject("B", 2), tags: ["all-single-tag"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("all-single-other", new TestObject("Other", 3), tags: ["other-tag"], ct: TestContext.Current.CancellationToken);
+
+        await Cache.RemoveByAllTagsAsync(["all-single-tag"], TestContext.Current.CancellationToken);
+
+        (await Cache.GetAsync<TestObject>("all-single-a", TestContext.Current.CancellationToken)).Should().BeNull();
+        (await Cache.GetAsync<TestObject>("all-single-b", TestContext.Current.CancellationToken)).Should().BeNull();
+        (await Cache.GetAsync<TestObject>("all-single-other", TestContext.Current.CancellationToken)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RemoveByAllTagsAsync_MultipleTags_RemovesOnlyEntriesWithAllTags()
+    {
+        // Only "all-match" has both tags — it should be removed
+        await Cache.SetAsync("all-match", new TestObject("Match", 1), tags: ["all-cat:books", "all-region:us"], ct: TestContext.Current.CancellationToken);
+        // These have only one of the two tags — they should be kept
+        await Cache.SetAsync("all-cat-only", new TestObject("CatOnly", 2), tags: ["all-cat:books"], ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("all-region-only", new TestObject("RegionOnly", 3), tags: ["all-region:us"], ct: TestContext.Current.CancellationToken);
+
+        await Cache.RemoveByAllTagsAsync(["all-cat:books", "all-region:us"], TestContext.Current.CancellationToken);
+
+        (await Cache.GetAsync<TestObject>("all-match", TestContext.Current.CancellationToken)).Should().BeNull();
+        (await Cache.GetAsync<TestObject>("all-cat-only", TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await Cache.GetAsync<TestObject>("all-region-only", TestContext.Current.CancellationToken)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RemoveByAllTagsAsync_MultipleTags_DoesNotRemoveUntaggedEntry()
+    {
+        await Cache.SetAsync("all-untagged", new TestObject("Untagged", 1), ct: TestContext.Current.CancellationToken);
+        await Cache.SetAsync("all-tagged", new TestObject("Tagged", 2), tags: ["all-tag-x", "all-tag-y"], ct: TestContext.Current.CancellationToken);
+
+        await Cache.RemoveByAllTagsAsync(["all-tag-y", "all-tag-x"], TestContext.Current.CancellationToken);
+
+        (await Cache.GetAsync<TestObject>("all-tagged", TestContext.Current.CancellationToken)).Should().BeNull();
+        (await Cache.GetAsync<TestObject>("all-untagged", TestContext.Current.CancellationToken)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RemoveByAllTagsAsync_MultipleTags_TagCaseInsensitive()
+    {
+        await Cache.SetAsync("all-ci-key", new TestObject("CI", 1), tags: ["ALL-TAG-CI-A", "ALL-TAG-CI-B"], ct: TestContext.Current.CancellationToken);
+
+        await Cache.RemoveByAllTagsAsync(["all-tag-ci-a", "all-tag-ci-b"], TestContext.Current.CancellationToken);
+
+        (await Cache.GetAsync<TestObject>("all-ci-key", TestContext.Current.CancellationToken)).Should().BeNull();
+    }
+
     // ---- Tag update on overwrite ----
 
     [Fact]
@@ -416,5 +476,50 @@ public abstract class BaseTaggedCacheTests : IAsyncLifetime
         await Cache.GetOrCreateAsync<TestObject>("populate-key", ct => Task.FromResult<TestObject?>(new TestObject("Populated", 1)), ct: TestContext.Current.CancellationToken);
 
         (await Cache.GetAsync<TestObject>("populate-key", TestContext.Current.CancellationToken)).Should().Be(new TestObject("Populated", 1));
+    }
+
+    // ---- IDistributedCache byte[] API ----
+
+    [Fact]
+    public void Get_AfterSet_ReturnsNull_WhenKeyNotFound()
+    {
+        Cache.Get("bytes-missing").Should().BeNull();
+    }
+
+    [Fact]
+    public void Get_AfterSet_RoundTrips_ValidUtf8Bytes()
+    {
+        var expected = "Hello"u8.ToArray();
+        Cache.Set("bytes-utf8", expected, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        });
+
+        Cache.Get("bytes-utf8").Should().Equal(expected);
+    }
+
+    [Fact]
+    public void Get_AfterSet_RoundTrips_BinaryBytes()
+    {
+        var expected = new byte[] { 0x00, 0x01, 0xFF, 0xFE, 0x80, 0x81 };
+        Cache.Set("bytes-binary", expected, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        });
+
+        Cache.Get("bytes-binary").Should().Equal(expected);
+    }
+
+    [Fact]
+    public async Task GetAsync_AfterSetAsync_RoundTrips_BinaryBytes()
+    {
+        var expected = new byte[] { 0x00, 0x01, 0xFF, 0xFE, 0x80, 0x81 };
+        await Cache.SetAsync("async-bytes-binary", expected, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        }, TestContext.Current.CancellationToken);
+
+        var result = await Cache.GetAsync("async-bytes-binary", TestContext.Current.CancellationToken);
+        result.Should().Equal(expected);
     }
 }

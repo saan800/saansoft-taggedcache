@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SaanSoft.TaggedCache.Memory\SaanSoft.TaggedCache.Memory.csproj" />
+    <ProjectReference Include="..\..\src\SaanSoft.TaggedCache.OutputCache\SaanSoft.TaggedCache.OutputCache.csproj" />
+  </ItemGroup>
+
+</Project>

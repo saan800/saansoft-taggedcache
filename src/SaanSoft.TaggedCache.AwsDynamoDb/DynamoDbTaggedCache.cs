@@ -97,7 +97,7 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
     protected override async Task<Dictionary<string, DynamoDbCacheRecord?>> GetManyRecordsInternalAsync(
         IReadOnlyCollection<string> normalizedCacheKeys, CancellationToken ct)
     {
-        var results = normalizedCacheKeys.ToDictionary(k => k, k => (DynamoDbCacheRecord?)null);
+        var results = normalizedCacheKeys.ToDictionary(k => k, _ => (DynamoDbCacheRecord?)null);
 
         foreach (var batch in normalizedCacheKeys.Batch(100))
         {
@@ -429,17 +429,9 @@ public class DynamoDbTaggedCache(IAmazonDynamoDB dynamoDb, DynamoDbTaggedCacheOp
 
                 return;
             }
-            catch (TransactionCanceledException) when (attempt < cacheOptions.MaxRetries)
-            {
-                attempt++;
-                await Task.Delay(attempt.Backoff(), ct);
-            }
-            catch (ProvisionedThroughputExceededException) when (attempt < cacheOptions.MaxRetries)
-            {
-                attempt++;
-                await Task.Delay(attempt.Backoff(), ct);
-            }
-            catch (RequestLimitExceededException) when (attempt < cacheOptions.MaxRetries)
+            catch (AmazonDynamoDBException ex) when (
+                attempt < cacheOptions.MaxRetries &&
+                ex is TransactionCanceledException or ProvisionedThroughputExceededException or RequestLimitExceededException)
             {
                 attempt++;
                 await Task.Delay(attempt.Backoff(), ct);

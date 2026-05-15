@@ -18,7 +18,9 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
     public virtual async Task<byte[]?> GetAsync(string cacheKey, CancellationToken ct = default)
     {
         var payload = await GetPayloadAsync(cacheKey, ct);
-        return payload?.AsByteArray();
+        if (payload is null) return null;
+        var decoded = JsonSerializer.Deserialize<string>(payload, cacheOptions.JsonSerializerOptions);
+        return decoded is null ? null : Convert.FromBase64String(decoded);
     }
 
     public virtual async Task<T?> GetAsync<T>(string cacheKey, CancellationToken ct = default)
@@ -58,6 +60,8 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         finally
         {
             semaphore.Release();
+            if (semaphore.CurrentCount == 1)
+                _getOrCreateAsyncLocks.TryRemove(new KeyValuePair<string, SemaphoreSlim>(cacheKey, semaphore));
         }
     }
 
@@ -139,7 +143,7 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         => SetAsync(cacheKey, value, options, null).GetAwaiter().GetResult();
 
     public virtual Task SetAsync(string cacheKey, byte[] value, DistributedCacheEntryOptions options, CancellationToken ct = default)
-        => SetAsync(cacheKey, value.AsString(), options, null, ct);
+        => SetAsync(cacheKey, Convert.ToBase64String(value), options, null, ct);
 
     public virtual Task SetAsync<T>(TaggedCacheItem<T> item, DistributedCacheEntryOptions? options = null, CancellationToken ct = default)
         => SetAsync(item.Key, item.Value, options, item.Tags?.ToList(), ct);
@@ -264,33 +268,20 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
     {
         ArgumentNullException.ThrowIfNull(tags);
         var normalizedTags = NormalizeTags(tags);
+        if (normalizedTags.Length == 0) return;
 
-        IEnumerable<string> cacheKeys = [];
-        var isFirstTag = true;
+        var cacheKeys = new HashSet<string>(await GetCacheKeysForTagAsync(normalizedTags[0], ct), StringComparer.OrdinalIgnoreCase);
 
-        foreach (var tag in normalizedTags)
+        foreach (var tag in normalizedTags.Skip(1))
         {
-            var cacheKeysForTag = await GetCacheKeysForTagAsync(tag, ct);
-            if (isFirstTag)
-            {
-                // first time around - add all the keys found for the tag
-                foreach (var cacheKey in cacheKeysForTag)
-                    cacheKeys = cacheKeys.Append(cacheKey);
-                isFirstTag = false;
-                continue;
-            }
-            else
-            {
-                // only want cache keys that are found on all tags
-                cacheKeys = cacheKeys.Intersect(cacheKeysForTag);
-                if (!cacheKeys.Any())
-                    break;
-            }
+            if (cacheKeys.Count == 0) return;
+
+            // only want cache keys that are found on all tags
+            cacheKeys.IntersectWith(await GetCacheKeysForTagAsync(tag, ct));
         }
 
-        // no cache keys found with all that tags, nothing else to do
-        if (!cacheKeys.Any()) return;
-
+        // no remaining tags, nothing to see here...
+        if (cacheKeys.Count == 0) return;
 
         await RemoveManyAsync(cacheKeys.ToList(), ct);
     }
@@ -405,7 +396,6 @@ public abstract class BaseTaggedCache<TCacheRecord, TPayload>(ITaggedCacheOption
         if (tags is null)
             return [];
         return tags
-            .Where(t => !string.IsNullOrWhiteSpace(t))
             .Select(t => NormalizeTag(t))
             .Distinct()
             .ToArray();
